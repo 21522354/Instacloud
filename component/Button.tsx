@@ -9,10 +9,10 @@ type Props = {
 export default function Button({ label, onPress }: Props) {
   return (
     <TouchableOpacity
-        className="w-11/12 h-12 bg-blue-500 rounded-lg flex items-center justify-center"
+        className="w-11/12 h-12 bg-sky-500 rounded-lg flex items-center justify-center"
         onPress={onPress}
       >
-      <Text className="text-white text-lg font-bold">{label}</Text>
+        <Text className="text-white text-lg font-bold">{label}</Text>
     </TouchableOpacity>
   );
 }
