@@ -39,7 +39,12 @@ export default function Login() {
         onChangeText={(text) => setPassword(text)}
         secureTextEntry={true}
       />
-      <Button label="Log in" onPress={handleLogin}></Button>
+      <TouchableOpacity
+        className="w-11/12 h-12 bg-sky-500 rounded-lg flex items-center justify-center"
+        onPress={handleLogin}
+      >
+        <Text className="text-white text-lg font-bold">Log in</Text>
+      </TouchableOpacity>
     </View>
   );
 }
