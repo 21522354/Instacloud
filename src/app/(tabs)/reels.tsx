@@ -9,10 +9,11 @@ import {
   TouchableOpacity
 } from 'react-native';
 import { ResizeMode, Video } from 'expo-av';
-import User from 'component/User'; // Đảm bảo đúng đường dẫn file User
+import User from 'component/UserComponent/User'; // Đảm bảo đúng đường dẫn file User
 import AntDesign from '@expo/vector-icons/AntDesign';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5'; // Thêm FontAwesome5 cho biểu tượng Play
+import CommentModal from 'component/CommentComponent/CommentModal';
 
 const Reels = () => {
   const videoData = [
@@ -65,6 +66,20 @@ const Reels = () => {
   const [data, setData] = useState(videoData); // State để lưu trữ dữ liệu video
   const [pausedVideoIndex, setPausedVideoIndex] = useState(null); // State lưu trữ video đang tạm dừng
 
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedPostId, setSelectedPostId] = useState(null);
+  const [videoStatus, setVideoStatus] = useState({});
+
+  const closeModal = () => {
+    setModalVisible(false);
+    setSelectedPostId(null);
+  };
+
+  const openModal = (postId) => {
+    setSelectedPostId(postId);
+    setModalVisible(true);
+  };
+
   const handlePress = async (index) => {
     const video = videoRefs.current[index];
     const status = await video.getStatusAsync();
@@ -94,7 +109,7 @@ const Reels = () => {
   const renderItem = ({ item, index }) => (
     <View style={styles.container}>
       <TouchableWithoutFeedback onPress={() => handlePress(index)}>
-        <Video
+      <Video
           ref={(ref) => (videoRefs.current[index] = ref)}
           source={{ uri: item.videoSource }}
           style={styles.video}
@@ -102,8 +117,40 @@ const Reels = () => {
           shouldPlay={index === currentIndex}
           isLooping
           useNativeControls={false}
+          onPlaybackStatusUpdate={(status) => {
+            if (status.isLoaded) {
+              setVideoStatus((prev) => ({
+                ...prev,
+                [index]: {
+                  currentTime: status.positionMillis,
+                  duration: status.durationMillis,
+                },
+              }));
+            }
+          }}
         />
+
       </TouchableWithoutFeedback>
+
+      {videoStatus[index] && (
+          <View style={styles.progressBarContainer}>
+            <View
+              style={[
+                styles.progressBar,
+                {
+                  width: `${
+                    (videoStatus[index].currentTime / videoStatus[index].duration) * 100
+                  }%`,
+                },
+              ]}
+            />
+            <Text style={styles.progressText}>
+              {new Date(videoStatus[index].currentTime).toISOString().substr(14, 5)} /{' '}
+              {new Date(videoStatus[index].duration).toISOString().substr(14, 5)}
+            </Text>
+          </View>
+        )}
+
 
       {/* Biểu tượng Play khi video bị pause */}
       {pausedVideoIndex === index && (
@@ -117,7 +164,7 @@ const Reels = () => {
           <AntDesign name={item.isLike ? 'heart' : 'hearto'} size={40} color="white" />
         </TouchableOpacity>
         <Text className="text-white text-sm text-center">{item.numberOfLike}</Text>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => openModal(item.postId)}>
           <FontAwesome className="mt-4" name="commenting-o" size={40} color="white" />
         </TouchableOpacity>
         <Text className="text-white text-sm text-center">{item.numberOfComment}</Text>
@@ -129,10 +176,14 @@ const Reels = () => {
           userId={item.userId}
           avatar={item.avatar}
           nickName={item.nickName}
-          onAvatarPress={() => alert(`Clicked avatar of user ${item.userId}`)}
         />
         <Text className="text-white text-sm ms-6 mt-4">{item.postTitle}</Text>
       </View>
+      <CommentModal
+        postId={selectedPostId}
+        visible={modalVisible}
+        onClose={closeModal}
+      />
     </View>
   );
 
@@ -178,6 +229,26 @@ const styles = StyleSheet.create({
     bottom: 70,
     flexDirection: 'column',
     alignItems: 'flex-start',
+  },
+  progressBarContainer: {
+    position: 'absolute',
+    bottom: 50,
+    left: 1,
+    right: 1,
+    height: 5,
+    backgroundColor: '#555',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  progressBar: {
+    height: '100%',
+    backgroundColor: '#ffff',
+  },
+  progressText: {
+    color: 'white',
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 5,
   },
 });
 
