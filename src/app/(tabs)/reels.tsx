@@ -6,7 +6,8 @@ import {
   FlatList,
   TouchableWithoutFeedback,
   Text,
-  TouchableOpacity
+  TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { ResizeMode, Video } from 'expo-av';
 import User from 'component/UserComponent/User';
@@ -26,6 +27,8 @@ const Reels = () => {
   const [selectedPostId, setSelectedPostId] = useState(null);
   const [videoStatus, setVideoStatus] = useState({});
   const [userId, setUserId] = useState(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     const fetchUserId = async () => {
@@ -33,7 +36,7 @@ const Reels = () => {
         const storedUserId = await AsyncStorage.getItem('userId');
         if (storedUserId) {
           setUserId(storedUserId);
-          fetchReels(storedUserId);
+          fetchReels(storedUserId, 1);
         }
       } catch (error) {
         console.error('Error retrieving userId:', error);
@@ -43,13 +46,26 @@ const Reels = () => {
     fetchUserId();
   }, []);
 
-  const fetchReels = async (userId) => {
+  const fetchReels = async (userId, page) => {
     try {
-      const response = await fetch(`${HostNamePostService}/api/posts/reels/${userId}`);
+      const response = await fetch(`${HostNamePostService}/api/posts/reels/${userId}?page=${page}`);
       const reelsData = await response.json();
-      setData(reelsData);
+      setData((prevData) => [...prevData, ...reelsData]);
     } catch (error) {
       console.error('Error fetching reels:', error);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  const loadMoreReels = () => {
+    if (!loadingMore) {
+      setLoadingMore(true);
+      setPage((prevPage) => {
+        const nextPage = prevPage + 1;
+        fetchReels(userId, nextPage);
+        return nextPage;
+      });
     }
   };
 
@@ -105,7 +121,6 @@ const Reels = () => {
       setCurrentIndex(index);
     }
   }).current;
-
 
   const renderItem = ({ item, index }) => (
     <View style={styles.container}>
@@ -199,6 +214,9 @@ const Reels = () => {
       viewabilityConfig={{
         itemVisiblePercentThreshold: 50,
       }}
+      onEndReached={loadMoreReels}
+      onEndReachedThreshold={0.5}
+      ListFooterComponent={loadingMore ? <ActivityIndicator size="large" color="#2196F3" /> : null}
     />
   );
 };
