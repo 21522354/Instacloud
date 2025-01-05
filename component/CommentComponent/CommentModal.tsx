@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,14 +8,19 @@ import {
   Dimensions,
   ActivityIndicator,
   TextInput,
+  ScrollView,
 } from 'react-native';
 import CommentItem from './CommentItem'; 
 import AntDesign from '@expo/vector-icons/AntDesign';
+import { HostNamePostService } from 'src/config/config';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const CommentModal = ({ postId, visible, onClose }) => {
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [newComment, setNewComment] = useState('');
+  const [replyToCommentId, setReplyToCommentId] = useState(null);
+  const inputRef = useRef(null);
 
   useEffect(() => {
     if (postId && visible) {
@@ -23,41 +28,12 @@ const CommentModal = ({ postId, visible, onClose }) => {
     }
   }, [postId, visible]);
 
-  const sampleComments = [
-    {
-      id: '1',
-      userId: '101',
-      avatar: 'https://ispacedanang.edu.vn/wp-content/uploads/2024/05/hinh-anh-dep-ve-hoc-sinh-cap-3-1.jpg',
-      nickName: 'JohnDoe',
-      comment: 'This is the first comment.',
-      isLiked: false,
-      timeStamp: '6 hours',
-    },
-    {
-      id: '2',
-      userId: '102',
-      avatar: 'https://ispacedanang.edu.vn/wp-content/uploads/2024/05/hinh-anh-dep-ve-hoc-sinh-cap-3-1.jpg',
-      nickName: 'JaneSmith',
-      comment: 'I love this post!',
-      isLiked: true,
-      timeStamp: '6 hours',
-    },
-    {
-      id: '3',
-      userId: '103',
-      avatar: 'https://ispacedanang.edu.vn/wp-content/uploads/2024/05/hinh-anh-dep-ve-hoc-sinh-cap-3-1.jpg',
-      nickName: 'AlexKing',
-      comment: 'Amazing content!',
-      isLiked: false,
-      timeStamp: '6 hours',
-    },
-  ];
-
   const fetchComments = async () => {
     setLoading(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setComments(sampleComments);
+      const response = await fetch(`${HostNamePostService}/api/posts/${postId}/comments`);
+      const commentsData = await response.json();
+      setComments(commentsData);
     } catch (error) {
       console.error('Error fetching comments:', error);
     } finally {
@@ -65,12 +41,51 @@ const CommentModal = ({ postId, visible, onClose }) => {
     }
   };
 
-  const handleSendComment = () => {
+  const handleSendComment = async () => {
     if (newComment.trim()) {
-      // Here you can add API call to post the comment
-      alert('Sending comment:'+ newComment);
-      setNewComment(''); // Clear input after sending
+      try {
+        const userId = await AsyncStorage.getItem('userId');
+        const endpoint = replyToCommentId
+          ? `${HostNamePostService}/api/posts/replyComment`
+          : `${HostNamePostService}/api/posts/commentPost`;
+
+        const body = replyToCommentId
+          ? {
+              commentId: replyToCommentId,
+              postId,
+              userId,
+              message: newComment,
+            }
+          : {
+              postId,
+              userId,
+              message: newComment,
+            };
+
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(body),
+        });
+
+        if (response.ok) {
+          setNewComment(''); // Clear input after sending
+          setReplyToCommentId(null); // Reset reply state
+          fetchComments(); // Refresh comments
+        } else {
+          console.error('Failed to post comment');
+        }
+      } catch (error) {
+        console.error('Error posting comment:', error);
+      }
     }
+  };
+
+  const handleReply = (commentId) => {
+    setReplyToCommentId(commentId);
+    inputRef.current.focus();
   };
 
   return (
@@ -94,23 +109,28 @@ const CommentModal = ({ postId, visible, onClose }) => {
           ) : comments.length === 0 ? (
             <Text style={styles.noComments}>No comments found</Text>
           ) : (
-            <View style={styles.commentsList}>
+            <ScrollView contentContainerStyle={styles.commentsList}>
               {comments.map((item) => (
                 <CommentItem
-                  key={item.id}
+                  replyComment={item.replyComment}
+                  key={item.commentId}
                   userId={item.userId}
                   avatar={item.avatar}
-                  nickName={item.nickName}
-                  comment={item.comment}
-                  isLiked={item.isLiked}
-                  timeStamp={item.timeStamp}
+                  nickName={item.name}
+                  comment={item.message}
+                  isLiked={false} // Assuming initial like status is false
+                  timeStamp="Just now" // Placeholder for timestamp
+                  numberOfLike={item.numberOfLike} // Pass number of likes
+                  commentId={item.commentId}
+                  onReply={handleReply}
                 />
               ))}
-            </View>
+            </ScrollView>
           )}
 
           <View style={styles.inputContainer}>
             <TextInput
+              ref={inputRef}
               style={styles.input}
               placeholder="Add a comment..."
               placeholderTextColor="#888"
@@ -148,7 +168,7 @@ const styles = StyleSheet.create({
   commentsList: {
     paddingBottom: 12,
     alignItems: 'flex-start',
-    flex: 1,
+    flexGrow: 1,
   },
   noComments: {
     fontSize: 16,

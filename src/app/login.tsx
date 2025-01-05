@@ -6,7 +6,10 @@ import {
   TextInput,
   View,
   TouchableOpacity,
+  Alert,
 } from "react-native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { HostNameUserService } from 'src/config/config';
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -14,9 +17,28 @@ export default function Login() {
 
   const router = useRouter();
 
-  const handleLogin = () => {
-    // Xử lý logic đăng nhập tại đây
-    router.replace("/home");
+  const handleLogin = async () => {
+    try {
+      console.log("Login into the server");
+      const response = await fetch(`${HostNameUserService}/api/users/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        await AsyncStorage.setItem('userId', data.userId);
+        router.replace("/home");
+      } else {
+        Alert.alert('Login Failed', 'Please check your credentials and try again.');
+      }
+    } catch (error) {
+      console.error('Error during login:', error);
+      Alert.alert('Error', 'An error occurred during login. Please try again later.');
+    }
   };
 
   return (
