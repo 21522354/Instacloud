@@ -16,6 +16,27 @@ export default function Layout() {
         headerTitleStyle: { color: 'white' }, // Màu trắng cho tiêu đề
         headerStyle: { backgroundColor: 'black' } // Màu nền tiêu đề
       }}/>
+      <Stack.Screen name="Followers" options={{
+        headerShown: true,
+        headerTitle: 'Followers',
+        headerTintColor: 'white', // Màu trắng cho icon quay lại
+        headerTitleStyle: { color: 'white' }, // Màu trắng cho tiêu đề
+        headerStyle: { backgroundColor: 'black' } // Màu nền tiêu đề
+      }}/>
+      <Stack.Screen name="Following" options={{
+        headerShown: true,
+        headerTitle: 'Following',
+        headerTintColor: 'white', // Màu trắng cho icon quay lại
+        headerTitleStyle: { color: 'white' }, // Màu trắng cho tiêu đề
+        headerStyle: { backgroundColor: 'black' } // Màu nền tiêu đề
+      }}/>
+      <Stack.Screen name="Notifications" options={{
+        headerShown: true,
+        headerTitle: 'Notifications',
+        headerTintColor: 'white', // Màu trắng cho icon quay lại
+        headerTitleStyle: { color: 'white' }, // Màu trắng cho tiêu đề
+        headerStyle: { backgroundColor: 'black' } // Màu nền tiêu đề
+      }}/>
     </Stack>
   )
 }

@@ -6,10 +6,13 @@ import { HostNamePostService } from 'src/config/config';
 import PostItem from 'component/PostItem';
 import { AntDesign, FontAwesome } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
+import { router } from "expo-router";
+import { useRouter } from "expo-router";
 
 export default function Page() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   const fetchPosts = async () => {
     setLoading(true);
@@ -62,6 +65,10 @@ export default function Page() {
       <Header />
       {loading ? (
         <ActivityIndicator size="large" color="#2196F3" />
+      ) : posts.length === 0 ? (
+        <View style={styles.noPostsContainer}>
+          <Text style={styles.noPostsText}>Go to explore for more posts</Text>
+        </View>
       ) : (
         <FlatList
           data={posts}
@@ -77,11 +84,17 @@ export default function Page() {
 
 function Header() {
   const { top } = useSafeAreaInsets();
+
+  const handleNotificaionClick = async () => {
+    const userId = await AsyncStorage.getItem("userId");
+    router.push({ pathname: '/Notifications', params: { userId: userId } });
+  }
+
   return (
     <View style={[styles.header, { paddingTop: top, alignItems: 'center' }]}>
       <Text style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 8, fontFamily: 'serif', color: 'white' }}>Instacloud</Text>
       <View style={styles.icons}>
-        <TouchableOpacity style={styles.icon}>
+        <TouchableOpacity onPress={handleNotificaionClick} style={styles.icon}>
           <AntDesign name="hearto" size={24} color="white" />
           <View style={styles.notificationDot} />
         </TouchableOpacity>
@@ -125,5 +138,14 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     backgroundColor: 'red',
+  },
+  noPostsContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  noPostsText: {
+    color: 'white',
+    fontSize: 18,
   },
 });

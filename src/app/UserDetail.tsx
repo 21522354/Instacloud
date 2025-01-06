@@ -12,59 +12,99 @@ const UserDetail = () => {
   const [posts, setPosts] = useState([]);
   const [numberOfFollowers, setNumberOfFollowers] = useState(0);
   const [numberOfFollowing, setNumberOfFollowing] = useState(0);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [myId, setMyId] = useState('');
   const router = useRouter();
-  const {userId} = useLocalSearchParams();
-
-  const fetchUserProfile = async () => {
-    try {
-      const response = await fetch(`${HostNameUserService}/api/users/${userId}`);
-      const data = await response.json();
-      //console.log('User Profile Data:', data); // In ra dữ liệu phản hồi
-      setUserProfile(data);
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
-    }
-  };
-
-  const fetchFollowers = async () => {
-    try {
-      const response = await fetch(`${HostNameUserService}/api/users/followers/${userId}`);
-      const data = await response.json();
-      console.log(data);
-      setNumberOfFollowers(data.length);
-    } catch (error) {
-      console.error('Error fetching followers:', error);
-    }
-  };
-
-  const fetchFollowing = async () => {
-    try {
-      console.log("Go into fetch following");
-      const response = await fetch(`${HostNameUserService}/api/users/following/${userId}`);
-      const data = await response.json();
-      console.log(data);
-      setNumberOfFollowing(data.length);
-    } catch (error) {
-      console.error('Error fetching following:', error);
-    }
-  };
-
-  const fetchPosts = async () => {
-    try {
-      const response = await fetch(`${HostNamePostService}/api/posts/personalPage/posts/${userId}`);
-      const data = await response.json();
-      setPosts(data);
-    } catch (error) {
-      console.error('Error fetching posts:', error);
-    }
-  };
+  const { userId } = useLocalSearchParams();
 
   useEffect(() => {
+    const fetchUserId = async () => {
+      const id = await AsyncStorage.getItem("userId");
+      setMyId(id);
+    };
+
+    const fetchUserProfile = async () => {
+      try {
+        const response = await fetch(`${HostNameUserService}/api/users/${userId}`);
+        const data = await response.json();
+        setUserProfile(data);
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+      }
+    };
+
+    const fetchFollowers = async () => {
+      try {
+        const response = await fetch(`${HostNameUserService}/api/users/followers/${userId}`);
+        const data = await response.json();
+        const myId = await AsyncStorage.getItem("userId");
+        setIsFollowing(data.some(follower => follower.userId === myId));
+        setNumberOfFollowers(data.length);
+      } catch (error) {
+        console.error('Error fetching followers:', error);
+      }
+    };
+
+    const fetchFollowing = async () => {
+      try {
+        const response = await fetch(`${HostNameUserService}/api/users/following/${userId}`);
+        const data = await response.json();
+        setNumberOfFollowing(data.length);
+      } catch (error) {
+        console.error('Error fetching following:', error);
+      }
+    };
+
+    const fetchPosts = async () => {
+      try {
+        const response = await fetch(`${HostNamePostService}/api/posts/personalPage/posts/${userId}`);
+        const data = await response.json();
+        setPosts(data);
+      } catch (error) {
+        console.error('Error fetching posts:', error);
+      }
+    };
+
+    fetchUserId();
     fetchUserProfile();
     fetchFollowers();
     fetchFollowing();
     fetchPosts();
   }, []);
+
+  const handleFollow = async () => {
+    try {
+      const endpoint = isFollowing
+        ? `${HostNameUserService}/api/users/unFollow`
+        : `${HostNameUserService}/api/users/follow`;
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          selfId: myId,
+          userFollowId: userId,
+        }),
+      });
+
+      if (response.ok) {
+        setIsFollowing(!isFollowing);
+      } else {
+        console.error('Error following/unfollowing user:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Error following/unfollowing user:', error);
+    }
+  };
+
+  const handleFollowersPress = () => {
+    router.push({ pathname: '/Followers', params: { userId : userId } });
+  };
+
+  const handleFollowingPress = () => {
+    router.push({ pathname: '/Following', params: { userId : userId } });
+  };
 
   return (
     <View style={styles.outerContainer}>
@@ -88,20 +128,25 @@ const UserDetail = () => {
               <Text style={styles.statNumber}>{posts.length}</Text>
               <Text style={styles.statLabel}>Posts</Text>
             </View>
-            <View style={styles.statItem}>
+            <TouchableOpacity style={styles.statItem} onPress={handleFollowersPress}>
               <Text style={styles.statNumber}>{numberOfFollowers}</Text>
               <Text style={styles.statLabel}>Followers</Text>
-            </View>
-            <View style={styles.statItem}>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.statItem} onPress={handleFollowingPress}>
               <Text style={styles.statNumber}>{numberOfFollowing}</Text>
               <Text style={styles.statLabel}>Following</Text>
-            </View>
+            </TouchableOpacity>
           </View>
 
           {/* Nút Follow và Chat */}
           <View style={styles.buttonsContainer}>
-            <TouchableOpacity style={styles.button}>
-              <Text style={styles.buttonText}>Follow</Text>
+            <TouchableOpacity
+              style={[styles.button, isFollowing && styles.followingButton]}
+              onPress={handleFollow}
+            >
+              <Text style={[styles.buttonText, isFollowing && styles.followingButtonText]}>
+                {isFollowing ? 'Following' : 'Follow'}
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.button}>
               <Text style={styles.buttonText}>Chat</Text>
@@ -127,21 +172,21 @@ const UserDetail = () => {
 const styles = StyleSheet.create({
   outerContainer: {
     flex: 1,
-    flexDirection: 'column', // Các phần tử nằm dọc
+    flexDirection: 'column',
     backgroundColor: 'black',
   },
   container: {
     flexDirection: 'row',
     padding: 16,
-    alignItems: 'flex-start', // Căn phần tử ở trên cùng
-    backgroundColor: '#000', // Nền đen
+    alignItems: 'flex-start',
+    backgroundColor: '#000',
   },
   leftContainer: {
     alignItems: 'center',
-    marginRight: 16, // Khoảng cách bên phải để các thống kê không bị dính vào ảnh đại diện
+    marginRight: 16,
   },
   rightContainer: {
-    flex: 1, // Chiếm không gian còn lại
+    flex: 1,
   },
   avatar: {
     width: SCREEN_WIDTH / 4,
@@ -155,45 +200,51 @@ const styles = StyleSheet.create({
   fullName: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#fff', // Chữ trắng
+    color: '#fff',
   },
   nickName: {
     fontSize: 14,
-    color: '#fff', // Chữ trắng
+    color: '#fff',
   },
   statsContainer: {
     marginTop: 30,
-    flexDirection: 'row', // Căn phần tử thống kê nằm ngang
-    alignItems: 'flex-start', // Căn thống kê ở trên cùng với avatar
+    flexDirection: 'row',
+    alignItems: 'flex-start',
   },
   statItem: {
     alignItems: 'center',
-    marginRight: 20, // Khoảng cách giữa các phần tử thống kê
+    marginRight: 20,
   },
   statNumber: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#fff', // Chữ trắng
+    color: '#fff',
   },
   statLabel: {
     fontSize: 12,
-    color: '#fff', // Chữ trắng
+    color: '#fff',
   },
   buttonsContainer: {
-    flexDirection: 'row', // Các nút nằm ngang
+    flexDirection: 'row',
     marginTop: 20,
   },
   button: {
-    backgroundColor: '#1a73e8', // Màu nền nút
+    backgroundColor: '#1a73e8',
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 20,
-    marginRight: 10, // Khoảng cách giữa các nút
+    marginRight: 10,
   },
   buttonText: {
-    color: '#fff', // Chữ nút trắng
+    color: '#fff',
     fontSize: 14,
     fontWeight: 'bold',
+  },
+  followingButton: {
+    backgroundColor: 'white',
+  },
+  followingButtonText: {
+    color: 'black',
   },
   gridContainer: {
     marginTop: 10,

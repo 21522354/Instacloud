@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Image, Dimensions, TouchableOpacity, FlatList }
 import PostImage from '../../../component/PostImage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { HostNamePostService, HostNameUserService } from '@/config/config';
+import { router } from 'expo-router';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -60,6 +61,17 @@ const PersonalProfile = () => {
     }
   };
 
+  const handleFollowersPress = async () => {
+    const userId = await AsyncStorage.getItem('userId');
+    router.push({ pathname: '/Followers', params: { userId :  userId} });
+  };
+
+  const handleFollowingPress = async () => {
+    const userId = await AsyncStorage.getItem('userId');
+    router.push({ pathname: '/Following', params: { userId :  userId} });
+  };
+
+
   useEffect(() => {
     fetchUserProfile();
     fetchFollowers();
@@ -89,25 +101,17 @@ const PersonalProfile = () => {
               <Text style={styles.statNumber}>{posts.length}</Text>
               <Text style={styles.statLabel}>Posts</Text>
             </View>
-            <View style={styles.statItem}>
+            <TouchableOpacity style={styles.statItem} onPress={handleFollowersPress}>
               <Text style={styles.statNumber}>{numberOfFollowers}</Text>
               <Text style={styles.statLabel}>Followers</Text>
-            </View>
-            <View style={styles.statItem}>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.statItem} onPress={handleFollowingPress}>
               <Text style={styles.statNumber}>{numberOfFollowing}</Text>
               <Text style={styles.statLabel}>Following</Text>
-            </View>
+            </TouchableOpacity>
           </View>
 
-          {/* Nút Follow và Chat */}
-          <View style={styles.buttonsContainer}>
-            <TouchableOpacity style={styles.button}>
-              <Text style={styles.buttonText}>Follow</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.button}>
-              <Text style={styles.buttonText}>Chat</Text>
-            </TouchableOpacity>
-          </View>
+
         </View>
       </View>
 
