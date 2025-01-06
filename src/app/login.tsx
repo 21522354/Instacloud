@@ -67,6 +67,12 @@ export default function Login() {
       >
         <Text className="text-white text-lg font-bold">Log in</Text>
       </TouchableOpacity>
+      <TouchableOpacity
+        className="w-11/12 h-12 mt-4 bg-gray-300 rounded-lg flex items-center justify-center"
+        onPress={() => router.push("/signup")}
+      >
+        <Text className="text-black text-lg font-bold">Sign Up</Text>
+      </TouchableOpacity>
     </View>
   );
 }

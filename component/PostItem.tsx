@@ -4,12 +4,15 @@ import { AntDesign, FontAwesome } from '@expo/vector-icons';
 import { HostNamePostService } from 'src/config/config';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import CommentModal from 'component/CommentComponent/CommentModal';
+import { useRouter } from 'expo-router';
+import User from './UserComponent/User';
 
 const PostItem = ({ post }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(post.numberOfLike);
   const [modalVisible, setModalVisible] = useState(false);
+  const router = useRouter();
 
   const handleViewableItemsChanged = ({ viewableItems }) => {
     if (viewableItems.length > 0) {
@@ -50,17 +53,18 @@ const PostItem = ({ post }) => {
     setModalVisible(false);
   };
 
+  const navigateToPostDetail = () => {
+    router.push({ pathname: '/PostDetail', params: { postId: post.postId } });
+  };
+
+  const formattedDate = new Date(post.createdDate);
+  const displayDate = isNaN(formattedDate.getTime()) ? 'Invalid Date' : formattedDate.toLocaleDateString();
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Image source={{ uri: post.avatar }} style={styles.avatar} />
-        <View style={styles.userInfo}>
-          <Text style={styles.nickName}>{post.nickName}</Text>
-          <Text style={styles.createdDate}>{new Date(post.createdDate).toLocaleDateString()}</Text>
-        </View>
-        <TouchableOpacity>
-          <AntDesign name="ellipsis1" size={24} color="white" />
-        </TouchableOpacity>
+        <User userId={post.userId} avatar={post.avatar} nickName={post.nickName} />
+        <Text style={styles.createdDate}>{displayDate}</Text>
       </View>
 
       <FlatList
@@ -94,9 +98,6 @@ const PostItem = ({ post }) => {
             <Text style={styles.iconText}>{post.numberOfComment}</Text>
           </TouchableOpacity>
         </View>
-        <TouchableOpacity>
-          <AntDesign name="book" size={24} color="white" />
-        </TouchableOpacity>
       </View>
 
       <View style={styles.postDetails}>
@@ -136,6 +137,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   createdDate: {
+    marginLeft: 10,
     color: '#888',
     fontSize: 12,
   },

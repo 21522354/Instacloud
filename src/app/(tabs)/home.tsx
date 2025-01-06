@@ -1,31 +1,61 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { View, FlatList, StyleSheet, ActivityIndicator, Text, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { HostNamePostService } from 'src/config/config';
 import PostItem from 'component/PostItem';
 import { AntDesign, FontAwesome } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function Page() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        const userId = await AsyncStorage.getItem('userId');
-        const response = await fetch(`${HostNamePostService}/api/posts/user/${userId}/feeds`);
-        const data = await response.json();
-        setPosts(data);
-      } catch (error) {
-        console.error('Error fetching posts:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchPosts = async () => {
+    setLoading(true);
+    try {
+      const userId = await AsyncStorage.getItem('userId');
+      const response = await fetch(`${HostNamePostService}/api/posts/user/${userId}/feeds`);
+      const data = await response.json();
+      setPosts(data);
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  const markPostAsViewed = async (postId) => {
+    try {
+      const userId = await AsyncStorage.getItem('userId');
+      await fetch(`${HostNamePostService}/api/posts/markViewed`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId, postId }),
+      });
+    } catch (error) {
+      console.error('Error marking post as viewed:', error);
+    }
+  };
+
+  const handleViewableItemsChanged = useCallback(({ viewableItems }) => {
+    viewableItems.forEach(({ item }) => {
+      console.log(item.postId);
+      markPostAsViewed(item.postId);
+    });
+  }, []);
+
+  useEffect(() => {
     fetchPosts();
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchPosts();
+    }, [])
+  );
 
   return (
     <View style={styles.container}>
@@ -37,6 +67,8 @@ export default function Page() {
           data={posts}
           keyExtractor={(item) => item.postId}
           renderItem={({ item }) => <PostItem post={item} />}
+          onViewableItemsChanged={handleViewableItemsChanged}
+          viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
         />
       )}
     </View>

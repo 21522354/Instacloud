@@ -1,20 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Image, Dimensions, TouchableOpacity, FlatList } from 'react-native';
-import PostImage from '../../../component/PostImage';
+import PostImage from '../../component/PostImage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { HostNamePostService, HostNameUserService } from '@/config/config';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
-const PersonalProfile = () => {
+const UserDetail = () => {
   const [userProfile, setUserProfile] = useState({});
   const [posts, setPosts] = useState([]);
   const [numberOfFollowers, setNumberOfFollowers] = useState(0);
   const [numberOfFollowing, setNumberOfFollowing] = useState(0);
+  const router = useRouter();
+  const {userId} = useLocalSearchParams();
 
   const fetchUserProfile = async () => {
     try {
-      const userId = await AsyncStorage.getItem('userId');
       const response = await fetch(`${HostNameUserService}/api/users/${userId}`);
       const data = await response.json();
       //console.log('User Profile Data:', data); // In ra dữ liệu phản hồi
@@ -26,7 +28,6 @@ const PersonalProfile = () => {
 
   const fetchFollowers = async () => {
     try {
-      const userId = await AsyncStorage.getItem('userId');
       const response = await fetch(`${HostNameUserService}/api/users/followers/${userId}`);
       const data = await response.json();
       console.log(data);
@@ -39,7 +40,6 @@ const PersonalProfile = () => {
   const fetchFollowing = async () => {
     try {
       console.log("Go into fetch following");
-      const userId = await AsyncStorage.getItem('userId');
       const response = await fetch(`${HostNameUserService}/api/users/following/${userId}`);
       const data = await response.json();
       console.log(data);
@@ -51,7 +51,6 @@ const PersonalProfile = () => {
 
   const fetchPosts = async () => {
     try {
-      const userId = await AsyncStorage.getItem('userId');
       const response = await fetch(`${HostNamePostService}/api/posts/personalPage/posts/${userId}`);
       const data = await response.json();
       setPosts(data);
@@ -202,4 +201,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default PersonalProfile;
+export default UserDetail;

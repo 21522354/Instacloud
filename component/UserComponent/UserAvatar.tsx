@@ -1,9 +1,13 @@
 import { StyleSheet, Text, TouchableOpacity, View, Image } from 'react-native'
 import React from 'react'
+import { useRouter, useLocalSearchParams } from 'expo-router';
 
 const UserAvatar = ({userId, avatar}) => {
+  const router = useRouter();
   return (
-    <TouchableOpacity onPress={() => alert(`This user has id is ${userId}`)}>
+    <TouchableOpacity onPress={() => {
+      router.push({ pathname: '/UserDetail', params: { userId : userId } });
+    }}>
         <Image source={{ uri: avatar }} style={styles.avatar} />
     </TouchableOpacity>
   )
