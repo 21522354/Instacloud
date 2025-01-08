@@ -1,24 +1,27 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Image, Dimensions, TouchableOpacity, FlatList } from 'react-native';
 import PostImage from '../../../component/PostImage';
+import PostVideo from '../../../component/PostVideo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { HostNamePostService, HostNameUserService } from '@/config/config';
 import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 const PersonalProfile = () => {
   const [userProfile, setUserProfile] = useState({});
   const [posts, setPosts] = useState([]);
+  const [reels, setReels] = useState([]);
   const [numberOfFollowers, setNumberOfFollowers] = useState(0);
   const [numberOfFollowing, setNumberOfFollowing] = useState(0);
+  const [activeTab, setActiveTab] = useState('posts'); // 'posts' or 'reels'
 
   const fetchUserProfile = async () => {
     try {
       const userId = await AsyncStorage.getItem('userId');
       const response = await fetch(`${HostNameUserService}/api/users/${userId}`);
       const data = await response.json();
-      //console.log('User Profile Data:', data); // In ra dữ liệu phản hồi
       setUserProfile(data);
     } catch (error) {
       console.error('Error fetching user profile:', error);
@@ -58,33 +61,59 @@ const PersonalProfile = () => {
     }
   };
 
+  const fetchReels = async () => {
+    try {
+      const userId = await AsyncStorage.getItem('userId');
+      const response = await fetch(`${HostNamePostService}/api/posts/personalPage/reels/${userId}`);
+      const data = await response.json();
+      setReels(data);
+    } catch (error) {
+      console.error('Error fetching reels:', error);
+    }
+  };
+
   const handleFollowersPress = async () => {
     const userId = await AsyncStorage.getItem('userId');
-    router.push({ pathname: '/Followers', params: { userId :  userId} });
+    router.push({ pathname: '/Followers', params: { userId: userId } });
   };
 
   const handleFollowingPress = async () => {
     const userId = await AsyncStorage.getItem('userId');
-    router.push({ pathname: '/Following', params: { userId :  userId} });
+    router.push({ pathname: '/Following', params: { userId: userId } });
   };
-
 
   useEffect(() => {
     fetchUserProfile();
     fetchFollowers();
     fetchFollowing();
     fetchPosts();
+    fetchReels();
   }, []);
+
+  const renderContent = () => {
+    const data = activeTab === 'posts' ? posts : reels;
+    return (
+      <FlatList
+        data={data}
+        renderItem={({ item }) =>
+          activeTab === 'posts' ? (
+            <PostImage imageUrl={item.imageAndVideo[0]} postId={item.postId} />
+          ) : (
+            <PostVideo videoUrl={item.imageAndVideo[0]} postId={item.postId} />
+          )
+        }
+        keyExtractor={(item) => item.postId}
+        numColumns={3}
+        contentContainerStyle={styles.gridContainer}
+      />
+    );
+  };
 
   return (
     <View style={styles.outerContainer}>
       <View style={styles.container}>
-        {/* Ảnh đại diện và thông tin tên */}
         <View style={styles.leftContainer}>
-          {/* Ảnh đại diện */}
           <Image source={{ uri: userProfile.avatar }} style={styles.avatar} />
-
-          {/* Thông tin tên */}
           <View style={styles.userInfo}>
             <Text style={styles.fullName}>{userProfile.fullName}</Text>
             <Text style={styles.nickName}>@{userProfile.nickName}</Text>
@@ -92,10 +121,9 @@ const PersonalProfile = () => {
         </View>
 
         <View style={styles.rightContainer}>
-          {/* Thống kê */}
           <View style={styles.statsContainer}>
             <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{posts.length}</Text>
+              <Text style={styles.statNumber}>{posts.length + reels.length}</Text>
               <Text style={styles.statLabel}>Posts</Text>
             </View>
             <TouchableOpacity style={styles.statItem} onPress={handleFollowersPress}>
@@ -107,21 +135,33 @@ const PersonalProfile = () => {
               <Text style={styles.statLabel}>Following</Text>
             </TouchableOpacity>
           </View>
-
-
         </View>
       </View>
 
-      {/* FlatList */}
-      <FlatList
-        data={posts}
-        renderItem={({ item }) => (
-          <PostImage imageUrl={item.imageAndVideo[0]} postId={item.postId} />
-        )}
-        keyExtractor={(item) => item.postId}
-        numColumns={3}
-        contentContainerStyle={styles.gridContainer}
-      />
+      <View style={styles.tabContainer}>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'posts' && styles.activeTab]}
+          onPress={() => setActiveTab('posts')}
+        >
+          <Ionicons
+            name="grid-outline"
+            size={24}
+            color={activeTab === 'posts' ? '#fff' : '#666'}
+          />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'reels' && styles.activeTab]}
+          onPress={() => setActiveTab('reels')}
+        >
+          <Ionicons
+            name="play-circle-outline"
+            size={24}
+            color={activeTab === 'reels' ? '#fff' : '#666'}
+          />
+        </TouchableOpacity>
+      </View>
+
+      {renderContent()}
     </View>
   );
 };
@@ -129,21 +169,21 @@ const PersonalProfile = () => {
 const styles = StyleSheet.create({
   outerContainer: {
     flex: 1,
-    flexDirection: 'column', // Các phần tử nằm dọc
+    flexDirection: 'column',
     backgroundColor: 'black',
   },
   container: {
     flexDirection: 'row',
     padding: 16,
-    alignItems: 'flex-start', // Căn phần tử ở trên cùng
-    backgroundColor: '#000', // Nền đen
+    alignItems: 'flex-start',
+    backgroundColor: '#000',
   },
   leftContainer: {
     alignItems: 'center',
-    marginRight: 16, // Khoảng cách bên phải để các thống kê không bị dính vào ảnh đại diện
+    marginRight: 16,
   },
   rightContainer: {
-    flex: 1, // Chiếm không gian còn lại
+    flex: 1,
   },
   avatar: {
     width: SCREEN_WIDTH / 4,
@@ -157,49 +197,47 @@ const styles = StyleSheet.create({
   fullName: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#fff', // Chữ trắng
+    color: '#fff',
   },
   nickName: {
     fontSize: 14,
-    color: '#fff', // Chữ trắng
+    color: '#fff',
   },
   statsContainer: {
     marginTop: 30,
-    flexDirection: 'row', // Căn phần tử thống kê nằm ngang
-    alignItems: 'flex-start', // Căn thống kê ở trên cùng với avatar
+    flexDirection: 'row',
+    alignItems: 'flex-start',
   },
   statItem: {
     alignItems: 'center',
-    marginRight: 20, // Khoảng cách giữa các phần tử thống kê
+    marginRight: 20,
   },
   statNumber: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#fff', // Chữ trắng
+    color: '#fff',
   },
   statLabel: {
     fontSize: 12,
-    color: '#fff', // Chữ trắng
+    color: '#fff',
   },
-  buttonsContainer: {
-    flexDirection: 'row', // Các nút nằm ngang
-    marginTop: 20,
+  tabContainer: {
+    flexDirection: 'row',
+    borderTopWidth: 0.5,
+    borderBottomWidth: 0.5,
+    borderColor: '#333',
   },
-  button: {
-    backgroundColor: '#1a73e8', // Màu nền nút
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    marginRight: 10, // Khoảng cách giữa các nút
+  tab: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 12,
   },
-  buttonText: {
-    color: '#fff', // Chữ nút trắng
-    fontSize: 14,
-    fontWeight: 'bold',
+  activeTab: {
+    borderBottomWidth: 2,
+    borderBottomColor: '#fff',
   },
   gridContainer: {
     marginTop: 10,
-    backgroundColor: 'black',
   },
 });
 

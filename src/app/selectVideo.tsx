@@ -1,33 +1,49 @@
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Platform } from 'react-native'
-import React, { useState, useEffect } from 'react'
-import * as ImagePicker from 'expo-image-picker'
-import { Ionicons } from '@expo/vector-icons'
-import { router } from 'expo-router'
-import { Video } from 'expo-av'
-import { HostNamePostService } from '@/config/config'
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Platform, TextInput, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import * as ImagePicker from 'expo-image-picker';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import { Video } from 'expo-av';
+import { uploadAvatar } from '@/utils/firebaseFunction';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { HostNamePostService } from '@/config/config';
 
-const { width } = Dimensions.get('window')
+const { width } = Dimensions.get('window');
+
+interface VideoAsset {
+  uri: string;
+  type?: string;
+  name?: string;
+}
 
 const SelectVideo = () => {
-  const [selectedVideo, setSelectedVideo] = useState<string | null>(null)
+  const [selectedVideo, setSelectedVideo] = useState<VideoAsset | null>(null);
+  const [title, setTitle] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const pickVideo = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Videos,
       allowsEditing: true,
       quality: 1,
-      videoMaxDuration: 60, // Max 60 seconds for reels
-    })
+      videoMaxDuration: 60,
+    });
 
-    if (!result.canceled) {
-      setSelectedVideo(result.assets[0].uri)
-      console.log('Selected video:', result.assets[0].uri)
+    if (!result.canceled && result.assets[0]) {
+      const asset = result.assets[0];
+      const videoAsset: VideoAsset = {
+        uri: asset.uri,
+        type: 'video/mp4',
+        name: asset.uri.split('/').pop() || 'video.mp4'
+      };
+      setSelectedVideo(videoAsset);
+      console.log('Selected video:', videoAsset);
     }
-  }
+  };
 
   useEffect(() => {
-    pickVideo()
-  }, [])
+    pickVideo();
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -36,44 +52,97 @@ const SelectVideo = () => {
           <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
         <Text style={styles.headerText}>Create Reel</Text>
-        <TouchableOpacity 
-          style={[styles.nextButton, !selectedVideo && styles.nextButtonDisabled]}
-          disabled={!selectedVideo}
-          onPress={() => {
-              const videoString = encodeURIComponent(JSON.stringify(selectedVideo))
-          
-            
+        <TouchableOpacity
+          style={[styles.nextButton, (!selectedVideo || !title || isLoading) && styles.nextButtonDisabled]}
+          disabled={!selectedVideo || !title || isLoading}
+          onPress={async () => {
+            if (selectedVideo) {
+              setIsLoading(true);
+              const userId = await AsyncStorage.getItem('userId');
+              uploadAvatar(selectedVideo).then(async (url) => {
+                try {
+                  const response = await fetch(`${HostNamePostService}/api/posts/create/reel`, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                      userId: userId,
+                      postTitle: title,
+                      video: url,
+                      listHagtag: []
+                    })
+                  });
+                  
+                  if (response.ok) {
+                    console.log('Reel created successfully');
+                    router.replace('/(tabs)/home');
+                  } else {
+                    console.error('Failed to create reel');
+                  }
+                } catch (error) {
+                  console.error('Error creating reel:', error);
+                } finally {
+                  setIsLoading(false);
+                }
+              }).catch((error) => {
+                console.error('Error uploading video:', error);
+                setIsLoading(false);
+              });
+            }
           }}
         >
-          <Text style={styles.nextButtonText}>Next</Text>
+          {isLoading ? (
+            <ActivityIndicator color="white" size="small" />
+          ) : (
+            <Text style={styles.nextButtonText}>Create</Text>
+          )}
         </TouchableOpacity>
       </View>
 
-      <View style={styles.videoContainer}>
-        {selectedVideo ? (
-          <Video
-            source={{ uri: selectedVideo }}
-            style={styles.video}
-            resizeMode="cover"
-            shouldPlay={true}
-            isLooping={true}
-            isMuted={true}
-          />
-        ) : (
-          <TouchableOpacity style={styles.placeholderContainer} onPress={pickVideo}>
-            <Ionicons name="videocam" size={48} color="#666" />
-            <Text style={styles.placeholderText}>Select a video for your reel</Text>
-          </TouchableOpacity>
+      <View style={styles.content}>
+        {isLoading && (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator color="white" size="large" />
+            <Text style={styles.loadingText}>Creating reel...</Text>
+          </View>
         )}
-      </View>
+        <View style={styles.videoContainer}>
+          {selectedVideo ? (
+            <Video
+              source={{ uri: selectedVideo.uri }}
+              style={styles.video}
+              resizeMode="cover"
+              shouldPlay={true}
+              isLooping={true}
+              isMuted={true}
+            />
+          ) : (
+            <TouchableOpacity style={styles.placeholderContainer} onPress={pickVideo}>
+              <Ionicons name="videocam" size={48} color="#666" />
+              <Text style={styles.placeholderText}>Select a video for your reel</Text>
+            </TouchableOpacity>
+          )}
+        </View>
 
-      <TouchableOpacity style={styles.addButton} onPress={pickVideo}>
-        <Ionicons name="videocam" size={24} color="white" />
-        <Text style={styles.addButtonText}>Choose Different Video</Text>
-      </TouchableOpacity>
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.titleInput}
+            placeholder="Enter reel title"
+            placeholderTextColor="#666"
+            value={title}
+            onChangeText={setTitle}
+          />
+          
+          <TouchableOpacity style={styles.addButton} onPress={pickVideo}>
+            <Ionicons name="videocam" size={24} color="white" />
+            <Text style={styles.addButtonText}>Choose Different Video</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     </View>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -94,6 +163,42 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
   },
+  content: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  videoContainer: {
+    height: width,
+    backgroundColor: '#111',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  video: {
+    width: width,
+    height: width,
+  },
+  inputContainer: {
+    padding: 16,
+    gap: 16,
+  },
+  placeholderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  placeholderText: {
+    color: '#666',
+    marginTop: 16,
+    fontSize: 16,
+  },
+  titleInput: {
+    backgroundColor: '#222',
+    color: 'white',
+    padding: 16,
+    fontSize: 16,
+    borderRadius: 8,
+  },
   nextButton: {
     backgroundColor: '#0095f6',
     paddingHorizontal: 16,
@@ -107,32 +212,13 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: '600',
   },
-  videoContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#111',
-  },
-  video: {
-    width: width,
-    height: width * 16 / 9,
-  },
-  placeholderContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  placeholderText: {
-    color: '#666',
-    marginTop: 16,
-    fontSize: 16,
-  },
   addButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 16,
     backgroundColor: '#222',
+    borderRadius: 8,
     gap: 8,
   },
   addButtonText: {
@@ -140,6 +226,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
   },
-})
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1,
+  },
+  loadingText: {
+    color: 'white',
+    marginTop: 12,
+    fontSize: 16,
+  },
+});
 
-export default SelectVideo
+export default SelectVideo;

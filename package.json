@@ -9,6 +9,7 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@firebase/storage": "^0.13.4",
     "@microsoft/signalr": "^8.0.7",
     "@react-native-async-storage/async-storage": "^2.1.0",
     "@zegocloud/zego-uikit-prebuilt-call-rn": "^6.2.2",
@@ -23,6 +24,7 @@
     "expo-splash-screen": "~0.29.13",
     "expo-status-bar": "~2.0.0",
     "expo-video": "~2.0.3",
+    "firebase": "^11.1.0",
     "nativewind": "^4.0.1",
     "react": "18.3.1",
     "react-dom": "18.3.1",

@@ -81,6 +81,13 @@ export default function Layout() {
           headerTitleStyle: { color: 'white' }, // Màu trắng cho tiêu đề
           headerStyle: { backgroundColor: 'black' } // Màu nền tiêu đề
         }}/>
+        <Stack.Screen name="ReelDetail" options={{
+          headerShown: false,
+          headerTitle: 'ReelDetail',
+          headerTintColor: 'white', // Màu trắng cho icon quay lại
+          headerTitleStyle: { color: 'white' }, // Màu trắng cho tiêu đề
+          headerStyle: { backgroundColor: 'black' } // Màu nền tiêu đề
+        }}/>
       </Stack>
       
     </SignalRProvider>
