@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Image, TouchableOpacity, Modal, Text, Dimensions, Pressable } from 'react-native';
+import { View, Image, TouchableOpacity, Modal, Text, Dimensions, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { AntDesign } from '@expo/vector-icons';
 import axios from 'axios';
 import { HostNameStoryService } from '../src/config/config';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface Story {
   storyId: string;
@@ -32,7 +33,7 @@ export const StoryViewer = () => {
 
   const fetchStories = async () => {
     try {
-      const userId = "your-user-id"; // Replace with actual user ID
+      const userId = await AsyncStorage.getItem('userId'); 
       const response = await axios.get(`${HostNameStoryService}/api/stories/user/${userId}`);
       setStories(response.data);
     } catch (error) {
@@ -75,25 +76,30 @@ export const StoryViewer = () => {
   };
 
   return (
-    <View className="mt-4">
+    <View style={styles.container}>
       {/* Stories List */}
-      <View className="flex-row px-4 space-x-4">
+      <ScrollView 
+        horizontal 
+        showsHorizontalScrollIndicator={false} 
+        style={styles.scrollView}
+      >
         {stories.map((user) => (
           <TouchableOpacity
             key={user.userId}
             onPress={() => handleStoryPress(user)}
-            className="items-center"
+            style={styles.storyButton}
           >
-            <View className="w-16 h-16 rounded-full border-2 border-pink-500 p-0.5">
+            <View style={styles.imageContainer}>
               <Image
                 source={{ uri: user.avatar }}
-                className="w-full h-full rounded-full"
+                style={styles.avatar}
+                resizeMode="cover"
               />
             </View>
-            <Text className="text-xs mt-1">{user.name}</Text>
+            <Text style={styles.username}>{user.name}</Text>
           </TouchableOpacity>
         ))}
-      </View>
+      </ScrollView>
 
       {/* Story Modal */}
       <Modal
@@ -102,55 +108,56 @@ export const StoryViewer = () => {
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}
       >
-        <View className="flex-1 bg-black">
+        <View style={styles.modalContainer}>
           {selectedUser && (
             <>
               {/* Header */}
-              <View className="flex-row items-center p-4 absolute top-0 z-10 w-full">
+              <View style={styles.modalHeader}>
                 <Image
                   source={{ uri: selectedUser.avatar }}
-                  className="w-8 h-8 rounded-full"
+                  style={styles.modalAvatar}
                 />
-                <Text className="text-white ml-2">{selectedUser.name}</Text>
+                <Text style={styles.modalUsername}>{selectedUser.name}</Text>
                 <TouchableOpacity
                   onPress={() => setModalVisible(false)}
-                  className="ml-auto"
+                  style={styles.closeButton}
                 >
                   <AntDesign name="close" size={24} color="white" />
                 </TouchableOpacity>
               </View>
 
               {/* Story Content */}
-              <View className="flex-1 justify-center">
+              <View style={styles.storyContent}>
                 <Image
                   source={{ uri: selectedUser.listStory[currentStoryIndex].image }}
-                  style={{ width: screenWidth, height: screenWidth * 1.77 }}
+                  style={[styles.storyImage, { width: screenWidth, height: screenWidth * 1.77 }]}
                   resizeMode="contain"
                 />
 
                 {/* Navigation Controls */}
-                <View className="flex-row absolute w-full h-full">
+                <View style={styles.navigationContainer}>
                   <Pressable
                     onPress={handlePrevious}
-                    className="w-1/2 h-full"
+                    style={styles.navigationButton}
                   />
                   <Pressable
                     onPress={handleNext}
-                    className="w-1/2 h-full"
+                    style={styles.navigationButton}
                   />
                 </View>
 
                 {/* Progress Bar */}
-                <View className="flex-row absolute top-12 w-full px-2">
+                <View style={styles.progressContainer}>
                   {selectedUser.listStory.map((_, index) => (
                     <View
                       key={index}
-                      className="flex-1 h-0.5 bg-gray-500 mx-0.5"
+                      style={styles.progressBar}
                     >
                       <View
-                        className={`h-full bg-white ${
-                          index <= currentStoryIndex ? 'w-full' : 'w-0'
-                        }`}
+                        style={[
+                          styles.progressIndicator,
+                          { width: index <= currentStoryIndex ? '100%' : '0%' }
+                        ]}
                       />
                     </View>
                   ))}
@@ -163,3 +170,95 @@ export const StoryViewer = () => {
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    height: 96,
+    backgroundColor: '#1f2937',
+  },
+  scrollView: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  storyButton: {
+    alignItems: 'center',
+    marginRight: 16,
+    justifyContent: 'center',
+  },
+  imageContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatar: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    borderWidth: 2,
+    borderColor: '#ec4899',
+    padding: 2,
+  },
+  username: {
+    fontSize: 12,
+    marginTop: 4,
+    color: 'white',
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'black',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    position: 'absolute',
+    top: 0,
+    zIndex: 10,
+    width: '100%',
+  },
+  modalAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+  },
+  modalUsername: {
+    color: 'white',
+    marginLeft: 8,
+  },
+  closeButton: {
+    marginLeft: 'auto',
+  },
+  storyContent: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  storyImage: {
+    resizeMode: 'contain',
+  },
+  navigationContainer: {
+    flexDirection: 'row',
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+  },
+  navigationButton: {
+    width: '50%',
+    height: '100%',
+  },
+  progressContainer: {
+    flexDirection: 'row',
+    position: 'absolute',
+    top: 48,
+    width: '100%',
+    paddingHorizontal: 8,
+  },
+  progressBar: {
+    flex: 1,
+    height: 2,
+    backgroundColor: '#4b5563',
+    marginHorizontal: 2,
+  },
+  progressIndicator: {
+    height: '100%',
+    backgroundColor: 'white',
+  },
+});

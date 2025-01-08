@@ -8,6 +8,7 @@ import { AntDesign, FontAwesome } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { router } from "expo-router";
 import { useRouter } from "expo-router";
+import { StoryViewer } from 'component/StoryViewer';
 
 export default function Page() {
   const [posts, setPosts] = useState([]);
@@ -62,6 +63,7 @@ export default function Page() {
   return (
     <View style={styles.container}>
       <Header />
+      <StoryViewer />
       {loading ? (
         <ActivityIndicator size="large" color="#2196F3" />
       ) : posts.length === 0 ? (
