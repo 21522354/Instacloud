@@ -30,7 +30,6 @@ const PersonalProfile = () => {
       const userId = await AsyncStorage.getItem('userId');
       const response = await fetch(`${HostNameUserService}/api/users/followers/${userId}`);
       const data = await response.json();
-      console.log(data);
       setNumberOfFollowers(data.length);
     } catch (error) {
       console.error('Error fetching followers:', error);
@@ -39,11 +38,9 @@ const PersonalProfile = () => {
 
   const fetchFollowing = async () => {
     try {
-      console.log("Go into fetch following");
       const userId = await AsyncStorage.getItem('userId');
       const response = await fetch(`${HostNameUserService}/api/users/following/${userId}`);
       const data = await response.json();
-      console.log(data);
       setNumberOfFollowing(data.length);
     } catch (error) {
       console.error('Error fetching following:', error);

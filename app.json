@@ -13,7 +13,8 @@
         {
           "origin": "https://n"
         }
-      ]
+      ],
+      "expo-video"
     ],
     "name": "Instacloud",
     "slug": "Instacloud"

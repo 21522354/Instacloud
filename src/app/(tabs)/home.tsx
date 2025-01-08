@@ -45,7 +45,6 @@ export default function Page() {
 
   const handleViewableItemsChanged = useCallback(({ viewableItems }) => {
     viewableItems.forEach(({ item }) => {
-      console.log(item.postId);
       markPostAsViewed(item.postId);
     });
   }, []);
@@ -90,6 +89,11 @@ function Header() {
     router.push({ pathname: '/Notifications', params: { userId: userId } });
   }
 
+  const handleChatClick = async () => {
+    const userId = await AsyncStorage.getItem("userId");
+    router.push({ pathname: '/ChatRooms', params: { userId: userId } });
+  }
+
   return (
     <View style={[styles.header, { paddingTop: top, alignItems: 'center' }]}>
       <Text style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 8, fontFamily: 'serif', color: 'white' }}>Instacloud</Text>
@@ -98,7 +102,7 @@ function Header() {
           <AntDesign name="hearto" size={24} color="white" />
           <View style={styles.notificationDot} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.icon}>
+        <TouchableOpacity onPress={handleChatClick} style={styles.icon}>
           <FontAwesome name="send-o" size={24} color="white" />
           <View style={styles.notificationDot} />
         </TouchableOpacity>
