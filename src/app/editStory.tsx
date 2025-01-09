@@ -1,17 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import { HostNameStoryService } from '@/config/config';
+import { uploadToImgur } from '../utils/imgur';
+import ViewShot from 'react-native-view-shot';
 
 export default function EditStory() {
   const { imageUrl } = useLocalSearchParams();
   const [loading, setLoading] = useState(false);
   const [brightness, setBrightness] = useState(0);
   const [filter, setFilter] = useState('none');
+  const viewShotRef = useRef();
 
-  const createStory = async () => {
+  const captureEditedImage = async () => {
+    try {
+      const uri = await viewShotRef.current.capture();
+      return uri;
+    } catch (error) {
+      console.error('Error capturing edited image:', error);
+      throw error;
+    }
+  };
+
+  const createStory = async (finalImageUrl: string) => {
     try {
       const userId = await AsyncStorage.getItem('userId');
       const response = await fetch(`${HostNameStoryService}/api/stories`, {
@@ -21,7 +35,7 @@ export default function EditStory() {
         },
         body: JSON.stringify({
           userId,
-          image: imageUrl,
+          image: finalImageUrl,
           sound: 'abcd',
           isSaved: false
         }),
@@ -41,7 +55,14 @@ export default function EditStory() {
   const handleCreate = async () => {
     setLoading(true);
     try {
-      await createStory();
+      // Capture the edited image
+      const editedImageUri = await captureEditedImage();
+      
+      // Upload the edited image to Imgur
+      const finalImageUrl = await uploadToImgur(editedImageUri);
+      
+      // Create the story with the new Imgur URL
+      await createStory(finalImageUrl);
     } catch (error) {
       console.error('Error in story creation:', error);
       // You might want to show an error message to the user here
@@ -80,7 +101,11 @@ export default function EditStory() {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.imageContainer}>
+      <ViewShot
+        ref={viewShotRef}
+        options={{ format: 'jpg', quality: 0.9 }}
+        style={styles.imageContainer}
+      >
         <Image 
           source={{ uri: imageUrl as string }} 
           style={[
@@ -89,7 +114,7 @@ export default function EditStory() {
             filter === 'grayscale' && styles.grayscale
           ]} 
         />
-      </View>
+      </ViewShot>
 
       <View style={styles.toolsContainer}>
         <TouchableOpacity 
