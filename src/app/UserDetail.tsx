@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useId, useState } from 'react';
 import { View, Text, StyleSheet, Image, Dimensions, TouchableOpacity, FlatList } from 'react-native';
 import PostImage from '../../component/PostImage';
 import PostVideo from '../../component/PostVideo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { HostNamePostService, HostNameUserService } from '@/config/config';
+import { HostNameChatService, HostNamePostService, HostNameUserService } from '@/config/config';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -140,6 +140,29 @@ const UserDetail = () => {
     );
   };
 
+  const handleChatClick = async () => {
+    const myId = await AsyncStorage.getItem("userId");
+    const messageData = {
+      userSendId: myId, // userId từ AsyncStorage
+      userReceiveId: userId, // userFriendId (có thể lấy từ tham số hoặc state)
+      message: "Hello", // Tin nhắn từ input
+    };
+
+    const response = await fetch(`${HostNameChatService}/api/chat/sendText`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(messageData),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to send message');
+    }
+
+    router.push({ pathname: '/ChatRooms', params: { userId: myId } });
+  }
+
   return (
     <View style={styles.outerContainer}>
       <View style={styles.container}>
@@ -176,7 +199,7 @@ const UserDetail = () => {
                 {isFollowing ? 'Following' : 'Follow'}
               </Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.button}>
+            <TouchableOpacity style={styles.button} onPress={handleChatClick}>
               <Text style={styles.buttonText}>Chat</Text>
             </TouchableOpacity>
           </View>
