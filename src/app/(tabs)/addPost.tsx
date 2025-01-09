@@ -38,7 +38,7 @@ const addPost = () => {
           <Ionicons name="chevron-forward" size={24} color="#666" />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.button} onPress={() => console.log('Create Story')}>
+        <TouchableOpacity style={styles.button} onPress={() => router.push('/createStory')}>
           <View style={styles.iconContainer}>
             <Ionicons name="add-circle" size={24} color="white" />
           </View>

@@ -65,7 +65,7 @@ export default function Page() {
   return (
     <View style={styles.container}>
       <Header />
-      <StoryViewer key={storyKey} />
+      <StoryViewer key={storyKey} router={router} />
       {loading ? (
         <ActivityIndicator size="large" color="#2196F3" />
       ) : posts.length === 0 ? (

@@ -4,6 +4,7 @@ import { AntDesign } from '@expo/vector-icons';
 import axios from 'axios';
 import { HostNameStoryService } from '../src/config/config';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
 
 interface Story {
   storyId: string;
@@ -20,7 +21,7 @@ interface UserStory {
   listStory: Story[];
 }
 
-export const StoryViewer = ({ onRefresh }: { onRefresh?: () => void }) => {
+export const StoryViewer = ({ onRefresh, router }: { onRefresh?: () => void, router: any }) => {
   const [stories, setStories] = useState<UserStory[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserStory | null>(null);
@@ -80,12 +81,20 @@ export const StoryViewer = ({ onRefresh }: { onRefresh?: () => void }) => {
 
   return (
     <View style={styles.container}>
-      {/* Stories List */}
       <ScrollView 
         horizontal 
         showsHorizontalScrollIndicator={false} 
         style={styles.scrollView}
       >
+        <TouchableOpacity
+          onPress={() => router.push('/createStory')}
+          style={styles.storyButton}
+        >
+          <View style={[styles.imageContainer, styles.createStoryContainer]}>
+            <Ionicons name="add-circle" size={24} color="#0095f6" />
+          </View>
+          <Text style={styles.username}>Create Story</Text>
+        </TouchableOpacity>
         {stories.map((user) => (
           <TouchableOpacity
             key={user.userId}
@@ -263,5 +272,10 @@ const styles = StyleSheet.create({
   progressIndicator: {
     height: '100%',
     backgroundColor: 'white',
+  },
+  createStoryContainer: {
+    backgroundColor: '#1f2937',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

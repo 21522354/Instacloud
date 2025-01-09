@@ -88,6 +88,20 @@ export default function Layout() {
           headerTitleStyle: { color: 'white' }, // Màu trắng cho tiêu đề
           headerStyle: { backgroundColor: 'black' } // Màu nền tiêu đề
         }}/>
+        <Stack.Screen name="createStory" options={{
+          headerShown: false,
+          headerTitle: 'createStory',
+          headerTintColor: 'white', // Màu trắng cho icon quay lại
+          headerTitleStyle: { color: 'white' }, // Màu trắng cho tiêu đề
+          headerStyle: { backgroundColor: 'black' } // Màu nền tiêu đề
+        }}/>
+        <Stack.Screen name="editStory" options={{
+          headerShown: false,
+          headerTitle: 'editStory',
+          headerTintColor: 'white', // Màu trắng cho icon quay lại
+          headerTitleStyle: { color: 'white' }, // Màu trắng cho tiêu đề
+          headerStyle: { backgroundColor: 'black' } // Màu nền tiêu đề
+        }}/>
       </Stack>
       
     </SignalRProvider>
