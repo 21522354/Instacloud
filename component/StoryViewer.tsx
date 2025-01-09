@@ -20,26 +20,29 @@ interface UserStory {
   listStory: Story[];
 }
 
-export const StoryViewer = () => {
+export const StoryViewer = ({ onRefresh }: { onRefresh?: () => void }) => {
   const [stories, setStories] = useState<UserStory[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserStory | null>(null);
   const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
   const screenWidth = Dimensions.get('window').width;
 
-  useEffect(() => {
-    fetchStories();
-  }, []);
-
   const fetchStories = async () => {
     try {
       const userId = await AsyncStorage.getItem('userId'); 
       const response = await axios.get(`${HostNameStoryService}/api/stories/user/${userId}`);
       setStories(response.data);
+      if (onRefresh) {
+        onRefresh();
+      }
     } catch (error) {
       console.error('Error fetching stories:', error);
     }
   };
+
+  useEffect(() => {
+    fetchStories();
+  }, []);
 
   const handleStoryPress = (user: UserStory) => {
     setSelectedUser(user);

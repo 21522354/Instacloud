@@ -13,6 +13,7 @@ import { StoryViewer } from 'component/StoryViewer';
 export default function Page() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [storyKey, setStoryKey] = useState(0);
   const router = useRouter();
 
   const fetchPosts = async () => {
@@ -57,13 +58,14 @@ export default function Page() {
   useFocusEffect(
     useCallback(() => {
       fetchPosts();
+      setStoryKey(prev => prev + 1);
     }, [])
   );
 
   return (
     <View style={styles.container}>
       <Header />
-      <StoryViewer />
+      <StoryViewer key={storyKey} />
       {loading ? (
         <ActivityIndicator size="large" color="#2196F3" />
       ) : posts.length === 0 ? (

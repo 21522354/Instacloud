@@ -1,8 +1,8 @@
-export const HostNamePostService = 'http://192.168.1.6:32679'; 
-export const HostNameUserService = 'http://192.168.1.6:32678'; 
-export const HostNameNotificationService = 'http://192.168.1.6:32681'; 
-export const HostNameChatService = 'http://192.168.1.6:32682';
-export const HostNameStoryService = 'http://192.168.1.6:32680';
+export const HostNamePostService = 'http://192.168.1.8:32679'; 
+export const HostNameUserService = 'http://192.168.1.8:32678'; 
+export const HostNameNotificationService = 'http://192.168.1.8:32681'; 
+export const HostNameChatService = 'http://192.168.1.8:32682';
+export const HostNameStoryService = 'http://192.168.1.8:32680';
 
 // Import the functions you need from the SDKs you need
 import { initializeApp } from 'firebase/app'

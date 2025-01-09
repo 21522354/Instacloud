@@ -82,6 +82,15 @@ const PersonalProfile = () => {
     router.push({ pathname: '/Following', params: { userId: userId } });
   };
 
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.clear();
+      router.replace('/login');
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
+  };
+
   useEffect(() => {
     fetchUserProfile();
     fetchFollowers();
@@ -111,6 +120,11 @@ const PersonalProfile = () => {
 
   return (
     <View style={styles.outerContainer}>
+      <View style={styles.headerContainer}>
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Ionicons name="log-out-outline" size={24} color="black" />
+        </TouchableOpacity>
+      </View>
       <View style={styles.container}>
         <View style={styles.leftContainer}>
           <Image source={{ uri: userProfile.avatar }} style={styles.avatar} />
@@ -122,10 +136,10 @@ const PersonalProfile = () => {
 
         <View style={styles.rightContainer}>
           <View style={styles.statsContainer}>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{posts.length + reels.length}</Text>
+            <TouchableOpacity style={styles.statItem} onPress={() => {}}>
+              <Text style={styles.statNumber}>{posts.length}</Text>
               <Text style={styles.statLabel}>Posts</Text>
-            </View>
+            </TouchableOpacity>
             <TouchableOpacity style={styles.statItem} onPress={handleFollowersPress}>
               <Text style={styles.statNumber}>{numberOfFollowers}</Text>
               <Text style={styles.statLabel}>Followers</Text>
@@ -171,6 +185,18 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'column',
     backgroundColor: 'black',
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 5,
+  },
+  logoutButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: '#fff',
   },
   container: {
     flexDirection: 'row',
